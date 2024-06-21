@@ -31,7 +31,19 @@ func main() {
 	c := colly.NewCollector()
 	// colly's main entity is Collector
 	// allows for HTTP requests and data extraction
+	// create a useragent to bypass bot detection
+	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+	c.Limit(&colly.LimitRule{
+		// creating a LimitRule struct
+		// taking its address to pass it to the Limit() method
+		Parallelism: 4,
+	})
+
 	c.OnRequest(func(r *colly.Request) {
+		// * because we are dereferencing the pointer
+		// accessing the Request field of the Request struct
+		// here it enables the object to be passed to the function
+		// and we can access the memory address of the object and change it
 		// attaching callback functions to the Collector
 		fmt.Println("Visiting", r.URL)
 	})
