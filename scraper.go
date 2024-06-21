@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
+	"log"
+	"os"
+
 	// import colly
 	"github.com/gocolly/colly"
 )
@@ -51,8 +55,40 @@ func main() {
 
 	})
 	c.OnScraped(func(r *colly.Response) {
-		// OnScraped() method is called after the scraping is done
-		fmt.Println("Finished scraping ", r.Request.URL)
+
+		// opening the CSV file
+		file, err := os.Create("products.csv")
+		if err != nil {
+			log.Fatalln("Failed to create output CSV file", err)
+		}
+		defer file.Close()
+
+		// initializing a file writer
+		writer := csv.NewWriter(file)
+
+		// writing the CSV headers
+		headers := []string{
+			"url",
+			"image",
+			"name",
+			"price",
+		}
+		writer.Write(headers)
+
+		// writing each product as a CSV row
+		for _, product := range products {
+			// converting a Product to an array of strings
+			record := []string{
+				product.url,
+				product.image,
+				product.name,
+				product.price,
+			}
+
+			// adding a CSV record to the output file
+			writer.Write(record)
+		}
+		defer writer.Flush()
 	})
 
 	c.Visit("https://scrapingcourse.com/ecommerce")
@@ -62,4 +98,6 @@ func main() {
 
 	fmt.Println("Hello, World!")
 	fmt.Println(products)
+
+	// timeout error fixed time to export to CSV
 }
