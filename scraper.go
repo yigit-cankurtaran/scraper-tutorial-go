@@ -19,6 +19,14 @@ func main() {
 	// gonna use ScrapingCourse.com as a test
 
 	var products []Product
+	// start of crawling logic
+	var pagesToScrape []string
+	pageToScrape := "https://scrapingcourse.com/ecommerce/page/1"
+	// first page to scrape
+	pagesDiscovered := []string{pageToScrape}
+	// pages discovered so far
+	iteration := 1
+	limit := 5
 
 	c := colly.NewCollector()
 	// colly's main entity is Collector
@@ -38,6 +46,14 @@ func main() {
 		// OnResponse() method is called after a response is received
 		fmt.Println("Visited", r.Request.URL)
 	})
+	c.OnHTML("a.page-numbers", func(e *colly.HTMLElement) {
+		newPageLink := e.Attr("href")
+		// if page is new
+		if !contains(pagesToScrape, newPageLink) {
+			pagesToScrape = append(pagesToScrape, newPageLink)
+		}
+		pagesDiscovered = append(pagesDiscovered, newPageLink)
+	})
 	c.OnHTML("li.product", func(e *colly.HTMLElement) {
 		// OnHTML() method is called when an HTML element is found
 		// the first argument is the HTML element to look for
@@ -55,6 +71,14 @@ func main() {
 
 	})
 	c.OnScraped(func(r *colly.Response) {
+
+		// go till there are no more pages to scrape
+		if len(pagesToScrape) != 0 && iteration < limit {
+			nextPage := pagesToScrape[0]
+			pagesToScrape = pagesToScrape[1:]
+			iteration++
+			c.Visit(nextPage)
+		}
 
 		// opening the CSV file
 		file, err := os.Create("products.csv")
@@ -91,7 +115,7 @@ func main() {
 		defer writer.Flush()
 	})
 
-	c.Visit("https://scrapingcourse.com/ecommerce")
+	c.Visit(pageToScrape)
 	// Visit() method makes a GET request to the URL passed as an argument
 	// and starts the scraping process
 	// putting this at the end of the code to start the scraping process
@@ -100,4 +124,17 @@ func main() {
 	fmt.Println(products)
 
 	// timeout error fixed time to export to CSV
+}
+
+// scraping is done currently
+// now we need crawling
+// every pagination link is identified with .page-numbers
+func contains(slice []string, element string) bool {
+	// utility function to check if a string is in a slice
+	for _, item := range slice {
+		if item == element {
+			return true
+		}
+	}
+	return false
 }
